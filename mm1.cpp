@@ -10,29 +10,32 @@ enum Constant {
     kCheckPoint = 100000
 };
 
+// Each packet has two properties: arrival time and serve time
 struct Packet {
     double arriveTime, serveTime;
 };
 
-class ExponentialGenerator {
+// A exponential variable generator by given lambda
+class ExponentialVariableGenerator {
     std::random_device rd;
     std::mt19937 gen;
     std::exponential_distribution<> dist;
 public:
-    ExponentialGenerator(double lambda) : rd(), gen(rd()), dist(lambda) { }
+    ExponentialVariableGenerator(double lambda) : rd(), gen(rd()), dist(lambda) { }
     
     inline double next() {
         return dist(gen);
     }
 };
 
+// Simulation queue
 class Queue {
     std::queue<Packet> queue_;
     
-    ExponentialGenerator packetServeTimeGen_, arriveTimeGen_;
+    ExponentialVariableGenerator packetServeTimeGen_, arriveTimeGen_;
     double nextArriveTime_;
     
-    // Create a new packet
+    // Create a new packet by exponential distribution
     inline Packet generatePacket(double arriveTime) {
         return Packet { arriveTime, packetServeTimeGen_.next() };
     }
@@ -41,6 +44,7 @@ public:
     // Initialize the simulation queue with certain arguments
     Queue() : packetServeTimeGen_(0.65), arriveTimeGen_(0.5), nextArriveTime_(0.0) { }
     
+    // Create a new packet, then push it into the queue
     void emit(double time) {
         queue_.push(generatePacket(time));
         nextArriveTime_ = time + arriveTimeGen_.next();
@@ -59,7 +63,7 @@ public:
     inline bool hasNextPacket() const {
         return !queue_.empty();
     }
-    
+    /**/
     Packet getNextPacket() {
         Packet retValue = queue_.front();
         queue_.pop();
@@ -107,23 +111,46 @@ int main() {
     
     Queue queue;
     
+    // Simulate until we reach the goal
     while (simulatedPacketCount < kTotalPacketCount) {
-        if (currentPacketFinishTime < queue.getNextArriveTime() && queue.hasNextPacket()) {
-            Packet packet = queue.getNextPacket();
-            simulatedPacketCount++;
-            if (simulatedPacketCount % kCheckPoint == 0) {
-                std::cout << "Simulated " << simulatedPacketCount << " packets.\n";
+        // This packet will be served before next packet arrives
+        if (currentPacketFinishTime < queue.getNextArriveTime())) {
+            // Has next packet
+            if (queue.hasNextPacket()) {
+                // Get next packet from the queue
+                Packet packet = queue.getNextPacket();
+
+                // Increase the counter
+                simulatedPacketCount++;
+
+                // Encounter a checkpoint, do print progress
+                if (simulatedPacketCount % kCheckPoint == 0) {
+                    std::cout << "Simulated " << simulatedPacketCount << " packets.\n";
+                }
+                
+                // Packet has been served, update current time
+                currentTime = currentPacketFinishTime;
+
+                // Append to waiting time
+                logger.logWaitingTime(currentPacketFinishTime - packet.arriveTime);
+
+                currentPacketFinishTime = currentTime + packet.serveTime;
             }
-            // Update time
-            currentTime = currentPacketFinishTime;
-
-            // Append to waiting time
-            logger.logWaitingTime(currentPacketFinishTime - packet.arriveTime);
-
-            currentPacketFinishTime = currentTime + packet.serveTime;
-        } else {
+            // No packets in the queue
+            else {
+                logger.logQueueLength(queue.size());
+                // Emit a packet
+                queue.emit(currentTime);
+                // Move forward time to the arrival time of next packet
+                currentTime = queue.getNextArriveTime();
+            }
+        }
+        // Next packet arrives before this packet is served
+        else {
             logger.logQueueLength(queue.size());
+            // Emit a packet
             queue.emit(currentTime);
+            // Time jump
             currentTime = queue.getNextArriveTime();
         }
     }
