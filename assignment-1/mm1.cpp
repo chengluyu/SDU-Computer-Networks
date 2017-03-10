@@ -6,7 +6,7 @@
 #include <vector>
 
 enum Constant {
-    kTotalPacketCount = 1000000,
+    kTotalPacketCount = 10000000,
     kCheckPoint = 100000
 };
 
@@ -114,7 +114,7 @@ int main() {
     // Simulate until we reach the goal
     while (simulatedPacketCount < kTotalPacketCount) {
         // This packet will be served before next packet arrives
-        if (currentPacketFinishTime < queue.getNextArriveTime())) {
+        if (currentPacketFinishTime < queue.getNextArriveTime()) {
             // Has next packet
             if (queue.hasNextPacket()) {
                 // Get next packet from the queue
