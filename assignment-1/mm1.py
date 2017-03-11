@@ -12,7 +12,7 @@ class Packet:
 
 class Generator:
     def __init__(self):
-        self.next_arrival_time = expovariate(0.5)
+        self.next_arrival_time = 0.0 + expovariate(0.5)
 
     def next(self):
         pack = Packet(self.next_arrival_time, expovariate(0.65))
@@ -20,13 +20,22 @@ class Generator:
         return pack
 
 
-def histogram(data):
-    counts, bins = np.histogram(data, bins=200, normed=True)
-    counts = [sum(counts[i:]) for i in range(len(counts))]
-    bins = (bins[:-1] + bins[1:]) / 2
-    plt.plot(bins, counts)
-    plt.semilogy()
-    plt.show()
+class Histogram:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def plot(data):
+        counts, bins = np.histogram(data, bins=400, normed=True)
+        counts = [sum(counts[i:]) for i in range(len(counts))]
+        bins = (bins[:-1] + bins[1:]) / 2
+        plt.plot(bins, counts)
+
+    @staticmethod
+    def show():
+        plt.semilogy()
+        plt.show()
+
 
 if __name__ == '__main__':
     total_packet_count = 1000000
@@ -62,6 +71,9 @@ if __name__ == '__main__':
                 waiting_time_samples.append(current_time - packet.arrival_time)
         # next packet will arrive before current packet is finished
         else:
-            queue.put(generator.next())
-
-    histogram(waiting_time_samples)
+            packet = generator.next()
+            current_time = packet.arrival_time
+            queue.put(packet)
+    
+    Histogram.plot(waiting_time_samples)
+    Histogram.show()
