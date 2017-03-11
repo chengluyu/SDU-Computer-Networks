@@ -1,7 +1,7 @@
 from random import randint
 from queue import Queue
 from sys import argv
-from simulation import Packet, Generator, Histogram
+from utilities import Packet, Generator, Histogram
 
 
 class Line:
