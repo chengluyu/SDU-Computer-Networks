@@ -1,162 +1,76 @@
-#include <fstream>
+#include <random>
 #include <iostream>
 #include <queue>
-#include <random>
-#include <string>
 #include <vector>
 
-enum Constant {
-    kTotalPacketCount = 10000000,
-    kCheckPoint = 100000
-};
-
-// Each packet has two properties: arrival time and serve time
 struct Packet {
-    double arriveTime, serveTime;
+    double arrivalTime, serviceTime;
 };
 
-// A exponential variable generator by given lambda
-class ExponentialVariableGenerator {
-    std::random_device rd;
-    std::mt19937 gen;
-    std::exponential_distribution<> dist;
+class Generator {
+    std::random_device randomDevice_;
+    std::mt19937 engine_;
+    std::exponential_distribution<> arrivalTimeDistri_;
+    std::exponential_distribution<> serviceTimeDistri_;
+    double nextArrivalTime_;
 public:
-    ExponentialVariableGenerator(double lambda) : rd(), gen(rd()), dist(lambda) { }
-    
-    inline double next() {
-        return dist(gen);
+    Generator() : randomDevice_(), engine_(randomDevice_()),
+                  arrivalTimeDistri_(0.5), serviceTimeDistri_(0.65) {
+        nextArrivalTime_ = arrivalTimeDistri_(engine_);
     }
-};
 
-// Simulation queue
-class Queue {
-    std::queue<Packet> queue_;
-    
-    ExponentialVariableGenerator packetServeTimeGen_, arriveTimeGen_;
-    double nextArriveTime_;
-    
-    // Create a new packet by exponential distribution
-    inline Packet generatePacket(double arriveTime) {
-        return Packet { arriveTime, packetServeTimeGen_.next() };
+    inline double nextArrivalTime() const {
+        return nextArrivalTime_;
     }
-    
-public:
-    // Initialize the simulation queue with certain arguments
-    Queue() : packetServeTimeGen_(0.65), arriveTimeGen_(0.5), nextArriveTime_(0.0) { }
-    
-    // Create a new packet, then push it into the queue
-    void emit(double time) {
-        queue_.push(generatePacket(time));
-        nextArriveTime_ = time + arriveTimeGen_.next();
-    }
-    
-    // Returns how many packets in the queue
-    inline int size() const {
-        return static_cast<int>(queue_.size());
-    }
-    
-    inline double getNextArriveTime() {
-        return nextArriveTime_;
-    }
-    
-    // Returns whether there is any packet in the queue
-    inline bool hasNextPacket() const {
-        return !queue_.empty();
-    }
-    /**/
-    Packet getNextPacket() {
-        Packet retValue = queue_.front();
-        queue_.pop();
-        return retValue;
+
+    Packet next() {
+        Packet packet { nextArrivalTime_, serviceTimeDistri_(engine_) };
+        nextArrivalTime_ += arrivalTimeDistri_(engine_);
+        return packet;
     }
 };
 
-class Logger {
-    std::vector<double> waitingTimeSamples_;
-    std::vector<int> queueLengthSamples_;
-public:
-    Logger() = default;
-    
-    inline void logWaitingTime(double time) {
-        waitingTimeSamples_.push_back(time);
-    }
-    
-    inline void logQueueLength(int length) {
-        queueLengthSamples_.push_back(length);
-    }
-    
-    void dumpToFile() {
-        std::ios::sync_with_stdio(false);
+void singleQueueSimulation(const signed totalPacketCount) {
+    const unsigned checkPointCount = 1000000;
 
-        std::ofstream waitingTimeWriter { "waiting-time.txt" };
-        for (double val : waitingTimeSamples_) {
-            waitingTimeWriter << val << '\n';
+    double currentTime = 0.0;
+    double currentPacketFinishedTime = 0.0;
+    unsigned simulatedPacketCount = 0;
+
+    std::vector<double> waitingTimeSamples;
+    waitingTimeSamples.reserve(totalPacketCount);
+    
+    std::queue<Packet> queue;
+    Generator generator;
+
+    while (simulatedPacketCount < totalPacketCount) {
+        if (currentPacketFinishedTime < generator.nextArrivalTime()) {
+
+            simulatedPacketCount++;
+            if (simulatedPacketCount % checkPointCount == 0) {
+                std::cout << "Simulated " << simulatedPacketCount << " packets\n";
+            }
+            
+            if (queue.empty()) {
+                Packet packet = generator.next();
+                currentTime = packet.arrivalTime;
+                currentPacketFinishedTime = packet.serviceTime + currentTime;
+                waitingTimeSamples.push_back(0.0);
+            } else {
+                Packet packet = queue.front();
+                queue.pop();
+                currentTime = currentPacketFinishedTime;
+                waitingTimeSamples.push_back(currentTime - packet.arrivalTime);
+            }
+        } else {
+            Packet packet = generator.next();
+            currentTime = packet.arrivalTime;
+            queue.push(packet);
         }
-        waitingTimeWriter.close();
-        
-        std::ofstream queueLengthWriter { "queue-length.txt" };
-        for (int val : queueLengthSamples_) {
-            waitingTimeWriter << val << '\n';
-        }
-        queueLengthWriter.close();
     }
-};
-
+}
 
 int main() {
-    Logger logger;
-    
-    double currentTime = 0.0, currentPacketFinishTime = 0.0;
-    int simulatedPacketCount = 0;
-    
-    Queue queue;
-    
-    // Simulate until we reach the goal
-    while (simulatedPacketCount < kTotalPacketCount) {
-        // This packet will be served before next packet arrives
-        if (currentPacketFinishTime < queue.getNextArriveTime()) {
-            // Has next packet
-            if (queue.hasNextPacket()) {
-                // Get next packet from the queue
-                Packet packet = queue.getNextPacket();
-
-                // Increase the counter
-                simulatedPacketCount++;
-
-                // Encounter a checkpoint, do print progress
-                if (simulatedPacketCount % kCheckPoint == 0) {
-                    std::cout << "Simulated " << simulatedPacketCount << " packets.\n";
-                }
-                
-                // Packet has been served, update current time
-                currentTime = currentPacketFinishTime;
-
-                // Append to waiting time
-                logger.logWaitingTime(currentPacketFinishTime - packet.arriveTime);
-
-                currentPacketFinishTime = currentTime + packet.serveTime;
-            }
-            // No packets in the queue
-            else {
-                logger.logQueueLength(queue.size());
-                // Emit a packet
-                queue.emit(currentTime);
-                // Move forward time to the arrival time of next packet
-                currentTime = queue.getNextArriveTime();
-            }
-        }
-        // Next packet arrives before this packet is served
-        else {
-            logger.logQueueLength(queue.size());
-            // Emit a packet
-            queue.emit(currentTime);
-            // Time jump
-            currentTime = queue.getNextArriveTime();
-        }
-    }
-    
-    std::cout << "Done.\n";
-
-    logger.dumpToFile();
+    singleQueueSimulation(10000000);
     return 0;
 }
