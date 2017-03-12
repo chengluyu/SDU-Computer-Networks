@@ -1,7 +1,7 @@
 from random import randint
 from queue import Queue
-from sys import argv
 from utilities import Packet, Generator, Histogram
+from optparse import OptionParser
 
 
 class Line:
@@ -33,9 +33,20 @@ class MultipleQueue:
         return max(self.lines, key=lambda l: l.queue.qsize())
 
 if __name__ == '__main__':
-    total_packet_count = 1000000
-    check_point_count = 100000
-    default_queue_count = 3 if len(argv) == 1 else int(argv[1])
+    # configure option parser
+    op = OptionParser(usage='%prog [TEST-SPECS]')
+    op.add_option('-q', '--queue', dest='queue_count', action='store',
+                  help='How many queues are used in simulation', default=3)
+    op.add_option('-p', '--packet', dest='packet_count', action='store',
+                  help='How many packet are generated in simulation',
+                  default=100000)
+
+    (options, args) = op.parse_args()
+
+    total_packet_count = int(options.packet_count)
+    default_queue_count = int(options.queue_count)
+
+    check_point_count = 10000
 
     simulated_packet_count = 0
     current_time = 0.0
@@ -68,6 +79,8 @@ if __name__ == '__main__':
             packet = line.generator.next()
             current_time = packet.arrival_time
             line.queue.put(packet)
+
+    print('Done')
 
     for line in queues.lines:
         Histogram.plot(line.waiting_time_samples)
