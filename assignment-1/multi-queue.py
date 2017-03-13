@@ -46,7 +46,7 @@ if __name__ == '__main__':
     total_packet_count = int(options.packet_count)
     default_queue_count = int(options.queue_count)
 
-    check_point_count = 10000
+    five_percent_count = int(total_packet_count / 20)
 
     simulated_packet_count = 0
     current_time = 0.0
@@ -60,8 +60,9 @@ if __name__ == '__main__':
 
         if current_packet_finished_time < line.generator.next_arrival_time:
             simulated_packet_count += 1
-            if simulated_packet_count % check_point_count == 0:
-                print('Simulated %d packets' % simulated_packet_count)
+            if simulated_packet_count % five_percent_count == 0:
+                proportion = 5 * int(simulated_packet_count / five_percent_count)
+                print('Simulated %d%% packets' % proportion)
 
             line = queues.schedule()
 
