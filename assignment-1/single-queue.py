@@ -11,7 +11,7 @@ if __name__ == '__main__':
     simulated_packet_count = 0
 
     queue = Queue()
-    generator = Generator()
+    generator = Generator(arrival_lambda=0.5, service_lambda=0.65)
 
     waiting_time_samples = []
 
@@ -27,18 +27,18 @@ if __name__ == '__main__':
                 packet = generator.next()
                 current_time = packet.arrival_time
                 current_packet_finished_time = packet.service_time + current_time
-                waiting_time_samples.append(0.0)
             # if queue is not empty, pick next packet from queue
             else:
                 packet = queue.get(block=False)
                 current_time = current_packet_finished_time
                 current_packet_finished_time = packet.service_time + current_time
-                waiting_time_samples.append(current_time - packet.arrival_time)
+
+            waiting_time_samples.append(current_time - packet.arrival_time)
         # next packet will arrive before current packet is finished
         else:
             packet = generator.next()
             current_time = packet.arrival_time
             queue.put(packet)
-    
+
     Histogram.plot(waiting_time_samples)
     Histogram.show()
