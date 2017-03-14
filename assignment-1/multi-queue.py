@@ -1,36 +1,7 @@
-from random import randint
-from queue import Queue
-from utilities import Packet, Generator, Histogram
+from utilities import Histogram
 from optparse import OptionParser
+from policy import RoundRobin
 
-
-class Line:
-    def __init__(self, identity, generator=Generator()):
-        self.id = identity
-        self.queue = Queue()
-        self.generator = Generator()
-        self.waiting_time_samples = []
-
-    def log_waiting_time(self, waiting_time):
-        self.waiting_time_samples.append(waiting_time)
-
-
-class MultipleQueue:
-    def __init__(self, queue_count):
-        if type(queue_count) == list:
-            lambdas = queue_count
-            queue_count = len(lambdas)
-
-        self.queue_count = queue_count
-        self.lines = [Line(i) for i in range(queue_count)]
-        self.line_with_minimal_arrival_time = None
-
-    def next_arrival_line(self):
-        return min(self.lines, key=lambda x: x.generator.next_arrival_time)
-
-    def schedule(self):
-        # return self.lines[randint(0, self.queue_count - 1)]
-        return max(self.lines, key=lambda l: l.queue.qsize())
 
 if __name__ == '__main__':
     # configure option parser
@@ -44,7 +15,6 @@ if __name__ == '__main__':
     (options, args) = op.parse_args()
 
     total_packet_count = int(options.packet_count)
-    default_queue_count = int(options.queue_count)
 
     five_percent_count = int(total_packet_count / 20)
 
@@ -52,7 +22,7 @@ if __name__ == '__main__':
     current_time = 0.0
     current_packet_finished_time = 0.0
 
-    queues = MultipleQueue(default_queue_count)
+    queues = RoundRobin(queue_count=int(options.queue_count))
 
     while simulated_packet_count < total_packet_count:
         # pick the line with minimal arrival time
