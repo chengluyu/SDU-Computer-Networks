@@ -1,6 +1,6 @@
 from utilities import Histogram
 from optparse import OptionParser
-from policy import RoundRobin
+from policy import strategies
 
 
 if __name__ == '__main__':
@@ -11,6 +11,8 @@ if __name__ == '__main__':
     op.add_option('-p', '--packet', dest='packet_count', action='store',
                   help='How many packet are generated in simulation',
                   default=100000)
+    op.add_option('-s', '--strategy', dest='strategy_name', action='store',
+                  help='Specify the strategy', default='roundrobin')
 
     (options, args) = op.parse_args()
 
@@ -22,7 +24,7 @@ if __name__ == '__main__':
     current_time = 0.0
     current_packet_finished_time = 0.0
 
-    queues = RoundRobin(queue_count=int(options.queue_count))
+    queues = strategies[options.strategy_name](int(options.queue_count))
 
     while simulated_packet_count < total_packet_count:
         # pick the line with minimal arrival time
@@ -40,12 +42,12 @@ if __name__ == '__main__':
                 packet = line.generator.next()
                 current_time = packet.arrival_time
                 current_packet_finished_time = current_time + packet.service_time
-                line.log_waiting_time(0.0)
             else:
                 packet = line.queue.get(block=False)
                 current_time = current_packet_finished_time
                 current_packet_finished_time = current_time + packet.service_time
-                line.log_waiting_time(current_time - packet.arrival_time)
+
+            line.log_waiting_time(current_time - packet.arrival_time)
         else:
             packet = line.generator.next()
             current_time = packet.arrival_time

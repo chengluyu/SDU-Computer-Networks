@@ -42,3 +42,16 @@ class RoundRobin(MultipleQueue):
         if self.next_queue_index == self.queue_count:
             self.next_queue_index = 0
         return line
+
+
+class Randomized(MultipleQueue):
+    def __init__(self, queue_count):
+        MultipleQueue.__init__(self, queue_count)
+
+    def schedule(self):
+        return self.lines[randint(0, self.queue_count - 1)]
+
+strategies = {
+    'roundrobin': RoundRobin,
+    'random': Randomized
+}
