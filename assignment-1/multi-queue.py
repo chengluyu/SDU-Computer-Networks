@@ -1,6 +1,6 @@
-from utilities import Histogram
+from utilities import Histogram, MultipleQueue
 from optparse import OptionParser
-from policy import strategies
+from policy import policies
 
 
 if __name__ == '__main__':
@@ -24,7 +24,8 @@ if __name__ == '__main__':
     current_time = 0.0
     current_packet_finished_time = 0.0
 
-    queues = strategies[options.strategy_name](int(options.queue_count))
+    queues = MultipleQueue(int(options.queue_count))
+    policy = policies[options.strategy_name](queues)
 
     while simulated_packet_count < total_packet_count:
         # pick the line with minimal arrival time
@@ -36,7 +37,7 @@ if __name__ == '__main__':
                 proportion = 5 * int(simulated_packet_count / five_percent_count)
                 print('Simulated %d%% packets' % proportion)
 
-            line = queues.schedule()
+            line = policy.schedule()
 
             if line.queue.empty():
                 packet = line.generator.next()

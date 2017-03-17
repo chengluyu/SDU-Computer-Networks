@@ -1,4 +1,5 @@
-from random import expovariate
+from random import expovariate, randint
+from queue import Queue
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -19,6 +20,32 @@ class Generator:
         pack = Packet(self.next_arrival_time, expovariate(self.service_lambda))
         self.next_arrival_time += expovariate(self.arrival_lambda)
         return pack
+
+
+class Line:
+    def __init__(self, identity, generator=Generator()):
+        self.id = identity
+        self.queue = Queue()
+        self.generator = Generator()
+        self.waiting_time_samples = []
+
+    def log_waiting_time(self, waiting_time):
+        self.waiting_time_samples.append(waiting_time)
+
+
+class MultipleQueue:
+    def __init__(self, queue_count):
+        if type(queue_count) == list:
+            lambdas = queue_count
+            queue_count = len(lambdas)
+
+        self.queue_count = queue_count
+        self.next_queue_index = 0
+        self.lines = [Line(i) for i in range(queue_count)]
+        self.line_with_minimal_arrival_time = None
+
+    def next_arrival_line(self):
+        return min(self.lines, key=lambda x: x.generator.next_arrival_time)
 
 
 class Histogram:

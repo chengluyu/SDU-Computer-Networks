@@ -1,57 +1,36 @@
-from utilities import Packet, Generator
-from random import randint
-from queue import Queue
+from utilities import MultipleQueue
 
-class Line:
-    def __init__(self, identity, generator=Generator()):
-        self.id = identity
-        self.queue = Queue()
-        self.generator = Generator()
-        self.waiting_time_samples = []
-
-    def log_waiting_time(self, waiting_time):
-        self.waiting_time_samples.append(waiting_time)
-
-
-class MultipleQueue:
-    def __init__(self, queue_count):
-        if type(queue_count) == list:
-            lambdas = queue_count
-            queue_count = len(lambdas)
-
-        self.queue_count = queue_count
-        self.next_queue_index = 0
-        self.lines = [Line(i) for i in range(queue_count)]
-        self.line_with_minimal_arrival_time = None
-
-    def next_arrival_line(self):
-        return min(self.lines, key=lambda x: x.generator.next_arrival_time)
+class Policy:
+    def __init__(self, queues: MultipleQueue):
+        self.queues = queues
 
     def schedule(self):
         pass
 
 
-class RoundRobin(MultipleQueue):
-    def __init__(self, queue_count):
-        MultipleQueue.__init__(self, queue_count)
+class RoundRobin(Policy):
+    def __init__(self, queues: MultipleQueue):
+        Policy.__init__(self, queues)
         self.next_queue_index = 0
 
     def schedule(self):
-        line = self.lines[self.next_queue_index]
+        line = self.queues.lines[self.next_queue_index]
         self.next_queue_index += 1
-        if self.next_queue_index == self.queue_count:
+        if self.next_queue_index == self.queues.queue_count:
             self.next_queue_index = 0
         return line
 
 
-class Randomized(MultipleQueue):
-    def __init__(self, queue_count):
-        MultipleQueue.__init__(self, queue_count)
+class Randomized(Policy):
+    def __init__(self, queues: MultipleQueue):
+        Policy.__init__(self, queues)
 
     def schedule(self):
-        return self.lines[randint(0, self.queue_count - 1)]
+        lines = self.queues.lines
+        return lines[randint(0, len(lines) - 1)]
 
-strategies = {
+# export policies
+policies = {
     'roundrobin': RoundRobin,
     'random': Randomized
 }
