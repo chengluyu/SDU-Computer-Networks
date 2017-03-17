@@ -7,6 +7,14 @@ class Policy:
     def schedule(self):
         pass
 
+    @staticmethod
+    def get_by_name(name, queues: MultipleQueue):
+        policies = {
+            'roundrobin': RoundRobin,
+            'random': Randomized
+        }
+        return policies[name](queues)
+
 
 class RoundRobin(Policy):
     def __init__(self, queues: MultipleQueue):
@@ -28,9 +36,3 @@ class Randomized(Policy):
     def schedule(self):
         lines = self.queues.lines
         return lines[randint(0, len(lines) - 1)]
-
-# export policies
-policies = {
-    'roundrobin': RoundRobin,
-    'random': Randomized
-}
