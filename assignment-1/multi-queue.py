@@ -17,6 +17,13 @@ if __name__ == '__main__':
     (options, args) = op.parse_args()
 
     total_packet_count = int(options.packet_count)
+    queue_count = int(options.queue_count)
+    policy_name = options.policy_name
+
+    print('''Simulation info:
+    packet count = %d
+    queue count = %d
+    policy name = %s''' % (total_packet_count, queue_count, policy_name))
 
     five_percent_count = int(total_packet_count / 20)
 
@@ -24,7 +31,7 @@ if __name__ == '__main__':
     current_time = 0.0
     current_packet_finished_time = 0.0
 
-    queues = MultipleQueue(queue_count=int(options.queue_count))
+    queues = MultipleQueue(queue_count)
     policy = Policy.get_by_name(name=options.policy_name, queues=queues)
 
     while simulated_packet_count < total_packet_count:
