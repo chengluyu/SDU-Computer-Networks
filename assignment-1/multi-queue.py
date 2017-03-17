@@ -1,6 +1,6 @@
 from utilities import Histogram, MultipleQueue
 from optparse import OptionParser
-from policy import policies
+from policy import Policy
 
 
 if __name__ == '__main__':
@@ -8,10 +8,10 @@ if __name__ == '__main__':
     op = OptionParser(usage='%prog [TEST-SPECS]')
     op.add_option('-q', '--queue', dest='queue_count', action='store',
                   help='How many queues are used in simulation', default=3)
-    op.add_option('-p', '--packet', dest='packet_count', action='store',
+    op.add_option('-c', '--count', dest='packet_count', action='store',
                   help='How many packet are generated in simulation',
                   default=100000)
-    op.add_option('-s', '--strategy', dest='strategy_name', action='store',
+    op.add_option('-p', '--policy', dest='policy_name', action='store',
                   help='Specify the strategy', default='roundrobin')
 
     (options, args) = op.parse_args()
@@ -24,8 +24,8 @@ if __name__ == '__main__':
     current_time = 0.0
     current_packet_finished_time = 0.0
 
-    queues = MultipleQueue(int(options.queue_count))
-    policy = policies[options.strategy_name](queues)
+    queues = MultipleQueue(queue_count=int(options.queue_count))
+    policy = Policy.get_by_name(name=options.policy_name, queues=queues)
 
     while simulated_packet_count < total_packet_count:
         # pick the line with minimal arrival time
