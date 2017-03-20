@@ -39,7 +39,7 @@ void singleQueueSimulation(const signed totalPacketCount) {
 
     std::vector<double> waitingTimeSamples;
     waitingTimeSamples.reserve(totalPacketCount);
-    
+
     std::queue<Packet> queue;
     Generator generator;
 
@@ -50,7 +50,7 @@ void singleQueueSimulation(const signed totalPacketCount) {
             if (simulatedPacketCount % checkPointCount == 0) {
                 std::cout << "Simulated " << simulatedPacketCount << " packets\n";
             }
-            
+
             if (queue.empty()) {
                 Packet packet = generator.next();
                 currentTime = packet.arrivalTime;
