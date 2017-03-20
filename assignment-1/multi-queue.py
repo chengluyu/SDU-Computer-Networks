@@ -44,7 +44,7 @@ if __name__ == '__main__':
                 proportion = 5 * int(simulated_packet_count / five_percent_count)
                 print('Simulated %d%% packets' % proportion)
 
-            line = policy.schedule()
+            line = policy.schedule(current_time)
 
             if line.queue.empty():
                 packet = line.generator.next()
