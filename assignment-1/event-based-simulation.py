@@ -1,12 +1,14 @@
 from queue import Queue
 from heapq import heappush, heappop
-from random import expovariate
+from random import expovariate, choice
+from string import ascii_uppercase, digits
 from utilities import Histogram
 
 class Packet:
-    def __init__(self, arrival_time, service_time):
+    def __init__(self, arrival_time, service_time, name = ''):
         self.arrival_time = arrival_time
         self.service_time = service_time
+        self.name = name
 
 class PacketQueue:
     def __init__(self):
@@ -55,8 +57,8 @@ class EventQueue:
         item = (packet.arrival_time, Event.KIND_ARRIVAL, queue_index, packet)
         self.push(item)
 
-    def schedule_finished(self, time, queue_number):
-        item = (time, Event.KIND_FINISHED, queue_number, None)
+    def schedule_finished(self, time, queue_number, packet):
+        item = (time, Event.KIND_FINISHED, queue_number, packet)
         self.push(item)
 
     def pop(self):
@@ -70,8 +72,9 @@ class Generator:
         self.service_lambda = service_lambda
 
     def next(self):
+        name = ''.join(choice(ascii_uppercase + digits) for _ in range(6))
         self.last_time = self.last_time + expovariate(self.arrival_lambda)
-        return Packet(self.last_time, expovariate(self.service_lambda))
+        return Packet(self.last_time, expovariate(self.service_lambda), name)
 
 def roundRobin(queues):
     while True:
@@ -109,11 +112,14 @@ def deficitRoundRobin(queues, quantum):
             yield (None, None)
 
 if __name__ == '__main__':
-    total_packet_count = 1000000
+    total_packet_count = 10000
     five_percent_count = int(total_packet_count / 20)
     total_queue_count = 3
     queue_arrival_lambdas = [0.3, 0.2, 0.1]
     queue_service_lambdas = [0.65] * 3
+
+    # for debug use
+    loop_counter = 0
 
     current_time = 0.0
     served_packet_count = 0
@@ -122,7 +128,7 @@ if __name__ == '__main__':
     queues = [PacketQueue() for _ in range(total_queue_count)]
     generators = [Generator(queue_arrival_lambdas[i], queue_service_lambdas[i]) for i in range(total_queue_count)]
     event_queue = EventQueue()
-    scheduler = deficitRoundRobin(queues, list(map(lambda x: 1 / x, queue_service_lambdas)))
+    scheduler = deficitRoundRobin(queues, list(map(lambda x: 1 / x, queue_arrival_lambdas)))
     # scheduler = roundRobin(queues)
 
     # initialization
@@ -130,12 +136,17 @@ if __name__ == '__main__':
         event_queue.schedule_arrival(i, generators[i].next())
 
     while served_packet_count < total_packet_count:
+        # verbose
+        print("[%d]" % loop_counter, end='\n')
+        loop_counter += 1
+
         event = event_queue.pop()
+        assert current_time <= event.time
         current_time = event.time # sync time
 
         if event.kind == Event.KIND_ARRIVAL:
             # verbose
-            # print("Arrival event of #%d queue at time %fs" % (event.queue_index, current_time))
+            print("ARRIVAL(#%d): name = %s, time = %fs" % (event.queue_index, event.packet.name, current_time))
 
             # push the arrival packet into its queue
             queues[event.queue_index].push(event.packet)
@@ -145,7 +156,7 @@ if __name__ == '__main__':
             event_queue.schedule_arrival(event.queue_index, next_packet)
         elif event.kind == Event.KIND_FINISHED:
             # verbose
-            # print("Finished event of #%d queue at time %fs" % (event.queue_index, current_time))
+            print("FINISH(#%d): name = %s, time = %fs" % (event.queue_index, event.packet.name, current_time))
 
             # set server free
             server_is_busy = False
@@ -163,7 +174,9 @@ if __name__ == '__main__':
             (queue_index, packet) = next(scheduler)
             if packet is None:
                 continue
-            event_queue.schedule_finished(current_time + packet.service_time, queue_index)
+
+            print("SERVE(#%d): name = %s, interval = %fs, wait = %f, estimate = %fs" % (queue_index, packet.name, packet.service_time, current_time + packet.service_time - packet.arrival_time, current_time + packet.service_time))
+            event_queue.schedule_finished(current_time + packet.service_time, queue_index, packet)
             waiting_times_records[event.queue_index].append(current_time + packet.service_time - packet.arrival_time)
             server_is_busy = True
 
