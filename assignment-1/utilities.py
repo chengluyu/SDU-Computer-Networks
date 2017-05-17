@@ -55,7 +55,7 @@ class Histogram:
     @staticmethod
     def plot(data):
         counts, bin_edges = np.histogram(data, bins=100, density=True)
-        cdf = [sum(counts[i:]) for i in range(len(counts))]
+        cdf = [sum(counts[i:]) * (bin_edges[1] - bin_edges[0]) for i in range(len(counts))]
         bins_avg = (bin_edges[:-1] + bin_edges[1:]) / 2
         plt.plot(bins_avg, cdf)
 
