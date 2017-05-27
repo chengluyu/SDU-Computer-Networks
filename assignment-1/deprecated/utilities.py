@@ -53,15 +53,16 @@ class Histogram:
         pass
 
     @staticmethod
-    def plot(data):
+    def plot(data, queue_number):
         counts, bin_edges = np.histogram(data, bins=100, density=True)
         cdf = [sum(counts[i:]) * (bin_edges[1] - bin_edges[0]) for i in range(len(counts))]
         bins_avg = (bin_edges[:-1] + bin_edges[1:]) / 2
-        plt.plot(bins_avg, cdf)
+        plt.plot(bins_avg, cdf, label=str(queue_number))
 
     @staticmethod
     def show():
         plt.title('Waiting Time Cumulative Distribution')
+        plt.legend(loc='upper center', shadow=True, fontsize='x-large')
         plt.xlabel('Time Epoch')
         plt.ylabel('Probability')
         plt.semilogy()
