@@ -82,7 +82,7 @@ def deficit_round_robin(waiting_queues, quantums):
             while not queue.empty() and deficit_counters[index] >= queue.peek().service_time:
                 deficit_counters[index] -= queue.peek().service_time
                 yield queue
-                empty_counter = 0 # reser the counter
+                empty_counter = 0 # reset the counter
             else:
                 empty_counter += 1
                 if empty_counter == len(waiting_queues):
