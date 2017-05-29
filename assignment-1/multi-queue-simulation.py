@@ -30,10 +30,16 @@ class Queue:
             return self.peep
 
     def length(self):
-        return len(self.data)
+        if self.peep is None:
+            return len(self.data)
+        else:
+            return 1 + len(self.data)
 
     def empty(self):
-        return len(self.data) == 0
+        if self.peep is None:
+            return len(self.data) == 0
+        else:
+            return False
 
     def push(self, item):
         self.data.append(item)
@@ -69,6 +75,26 @@ def round_robin(waiting_queues):
             else:
                 yield queue
                 counter = 0 # reset the counter
+
+def first_come_first_serve(waiting_queues):
+    while True:
+        result = None
+        min_time = float('inf')
+        for queue in waiting_queues:
+            if not queue.empty() and queue.peek().arrival_time < min_time:
+                result = queue
+                min_time = queue.peek().arrival_time
+        yield result
+
+def longest_queue(waiting_queues):
+    while True:
+        result = None
+        max_queue_length = 0
+        for queue in waiting_queues:
+            if queue.length() > max_queue_length:
+                result = queue
+                max_queue_length = queue.length()
+        yield result
 
 def deficit_round_robin(waiting_queues, quantums):
     deficit_counters = [ 0 ] * len(waiting_queues)
@@ -124,10 +150,12 @@ if __name__ == '__main__':
 
     # the scheduler
     # scheduler = round_robin(waiting_queues)
-    scheduler = deficit_round_robin(waiting_queues, [80, 60, 45])
+    # scheduler = deficit_round_robin(waiting_queues, [80, 60, 45])
+    scheduler = longest_queue(waiting_queues)
 
     while served_packet_count < total_packet_count:
         index, time = min(enumerate(next_arrival_times), key=lambda t: t[1])
+
         if server_is_idle or time < current_job_finish_time:
             current_time = time
             packet = Packet(time, expovariate(service_lambd), index)
@@ -141,6 +169,7 @@ if __name__ == '__main__':
             server_total_busy_time += current_job.service_time
             progress_bar.update(served_packet_count)
 
+        # do
         if server_is_idle:
             selected_queue = next(scheduler)
             if selected_queue is not None:
