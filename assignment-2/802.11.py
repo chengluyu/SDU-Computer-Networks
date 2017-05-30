@@ -33,6 +33,7 @@ def main(slot=1.0):
     WTlog = [[] for i in iterator]
     time = 0
     collision = 0
+    busy = 0
     idle = 0
     init(stations, QLlog, WTlog, l)
     update(stations, time)
@@ -51,12 +52,13 @@ def main(slot=1.0):
             continue
         elif sum(signal) > 1:
             collision += sum(signal)
+            idle -= 1
             for i in iterator:
                 if signal[i]:
                     if nthclsion[i] < 16:
                         nthclsion[i] += 1
                     # backoff[i] = random.randint(0, 2 ** max(nthclsion[i], sum(signal) - 1) - 1)
-                    backoff[i] = random.randint(1, 2 ** min(nthclsion[i], 16))
+                    backoff[i] = random.randint(1, 2 ** min(nthclsion[i], 10))
             continue
         for i in iterator:
             if signal[i]:
@@ -66,6 +68,7 @@ def main(slot=1.0):
                 station.death()
                 tmp = int(max(tmp, numpy.ceil(station.time() / time_slot - time)))
                 time += tmp
+                busy += tmp
                 update(stations, time * time_slot)
                 for j in iterator:
                     backoff[j] -= min(tmp, backoff[j])
@@ -80,14 +83,13 @@ def main(slot=1.0):
     # plt = Plot(QLFin, WTFin)
     CP = collision / (collision + TOTAL * snum) * 100
     OR = (time - idle) / time * 100
-    TP = (time - idle - collision) / time * 100
-    MQL = sum([sum(i) for i in QLlog]) / TOTAL / snum
+    TP = busy / time * 100
+    # MQL = sum([sum(i) for i in QLlog]) / TOTAL / snum
     MWT = sum([sum(i) for i in WTlog]) / TOTAL / snum
     # print('Collision Probability: %.3f%%' % CP)
     # print('Occupancy rate of channel: %.3f%%' % OR)
     # print('Done!')
     # plt.show()
-    print('4kp,', end='')
     return (time_slot, CP, OR, TP, MWT)
 
 
