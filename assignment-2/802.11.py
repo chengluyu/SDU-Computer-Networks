@@ -8,7 +8,7 @@ import numpy
 def main(slot=1.0):
     LAMBDA = [15] * 5
     MU = 100
-    TOTAL = 1e6
+    TOTAL = 1e5
     CHECK = 1e4
 
     def l(x=None):
@@ -87,6 +87,7 @@ def main(slot=1.0):
     # print('Occupancy rate of channel: %.3f%%' % OR)
     # print('Done!')
     # plt.show()
+    print('4kp,', end='')
     return (time_slot, CP, OR, TP, MWT)
 
 
