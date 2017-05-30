@@ -16,7 +16,8 @@ def main(slot=1):
         if x.get('type') == 'birth':
             if count <= TOTAL * snum:
                 if count % CHECK == 0:
-                    print('Simulated %d packets. (%.2f%%)' % (count, count / (TOTAL * snum) * 100))
+                    pass
+                    # print('Simulated %d packets. (%.2f%%)' % (count, count / (TOTAL * snum) * 100))
                 for i in iterator:
                     if len(QLlog[i]) >= TOTAL:
                         stations[i].stop()
