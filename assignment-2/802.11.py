@@ -78,8 +78,8 @@ def main(slot=1):
     # plt = Plot(QLFin, WTFin)
     CP = collision / (collision + TOTAL * snum) * 100
     OR = (collision + TOTAL * snum) / time * 100
-    MQL = max([max(i) for i in QLlog])
-    MWT = max([max(i) for i in WTlog])
+    MQL = sum([sum(i) for i in QLlog]) / TOTAL / snum
+    MWT = sum([sum(i) for i in WTlog]) / TOTAL / snum
     # print('Done!')
     # print('Collision Probability: %.3f%%' % CP)
     # print('Occupancy rate of channel: %.3f%%' % OR)
@@ -107,6 +107,6 @@ def update(stations, time):
 if __name__ == '__main__':
     p = Process(8)
     fin = p.Exec(main, [0.01 * i + 0.3 for i in range(170)])
-    print(fin)
+    # print(fin)
     plt = APlot(fin)
     plt.show()

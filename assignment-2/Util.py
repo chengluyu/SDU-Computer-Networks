@@ -85,12 +85,12 @@ class APlot:
         plt.ylabel('Occupancy rate')
         plt.plot(TP, JP)
         plt.subplot(223)
-        plt.title('Max Queue Length Distribution')
+        plt.title('Mean Queue Length Distribution')
         plt.xlabel('Time Slot Length')
         plt.ylabel('Queue Length')
         plt.plot(TP, KP)
         plt.subplot(224)
-        plt.title('Max Waiting Time Distribution')
+        plt.title('Mean Waiting Time Distribution')
         plt.xlabel('Time Slot Length')
         plt.ylabel('Waiting Time')
         plt.plot(TP, LP)
@@ -98,3 +98,4 @@ class APlot:
     @staticmethod
     def show():
         plt.show()
+        plt.savefig("2333.eps")
