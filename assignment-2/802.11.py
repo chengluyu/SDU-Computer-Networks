@@ -5,10 +5,10 @@ import random
 import numpy
 
 
-def main(slot=1):
+def main(slot=1.0):
     LAMBDA = [15] * 5
     MU = 100
-    TOTAL = 1e5
+    TOTAL = 1e6
     CHECK = 1e4
 
     def l(x=None):
@@ -33,6 +33,7 @@ def main(slot=1):
     WTlog = [[] for i in iterator]
     time = 0
     collision = 0
+    idle = 0
     init(stations, QLlog, WTlog, l)
     update(stations, time)
     while sum([len(i) for i in QLlog]) < TOTAL * snum or sum([i.length() for i in stations]):
@@ -43,6 +44,7 @@ def main(slot=1):
                 signal[i] = 0
         if sum(signal) <= 0:
             time += 1
+            idle += 1
             update(stations, time * time_slot)
             for i in iterator:
                 backoff[i] -= min(1, backoff[i])
@@ -54,7 +56,7 @@ def main(slot=1):
                     if nthclsion[i] < 16:
                         nthclsion[i] += 1
                     # backoff[i] = random.randint(0, 2 ** max(nthclsion[i], sum(signal) - 1) - 1)
-                    backoff[i] = random.randint(1, 2 ** min(nthclsion[i], 10))
+                    backoff[i] = random.randint(1, 2 ** min(nthclsion[i], 16))
             continue
         for i in iterator:
             if signal[i]:
@@ -77,14 +79,15 @@ def main(slot=1):
     # WTFin = [Analyzer.parse(i) for i in WTlog]
     # plt = Plot(QLFin, WTFin)
     CP = collision / (collision + TOTAL * snum) * 100
-    OR = (collision + TOTAL * snum) / time * 100
+    OR = (time - idle) / time * 100
+    TP = (time - idle - collision) / time * 100
     MQL = sum([sum(i) for i in QLlog]) / TOTAL / snum
     MWT = sum([sum(i) for i in WTlog]) / TOTAL / snum
-    # print('Done!')
     # print('Collision Probability: %.3f%%' % CP)
     # print('Occupancy rate of channel: %.3f%%' % OR)
+    # print('Done!')
     # plt.show()
-    return (time_slot, CP, OR, MQL, MWT)
+    return (time_slot, CP, OR, TP, MWT)
 
 
 def init(stations, QLlog, WTlog, log=None):
@@ -110,3 +113,4 @@ if __name__ == '__main__':
     # print(fin)
     plt = APlot(fin)
     plt.show()
+    # main(0.875)
