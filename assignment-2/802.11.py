@@ -5,7 +5,7 @@ import random
 import numpy
 
 
-def main(slot=1.0):
+def main(slot=1.0, stc=1):
     LAMBDA = [15] * 5
     MU = 100
     TOTAL = 1e5
@@ -34,6 +34,7 @@ def main(slot=1.0):
     time = 0
     collision = 0
     busy = 0
+    use = 0
     idle = 0
     init(stations, QLlog, WTlog, l)
     update(stations, time)
@@ -57,6 +58,7 @@ def main(slot=1.0):
                 if signal[i]:
                     if nthclsion[i] < 16:
                         nthclsion[i] += 1
+                    nthclsion[i] = max(nthclsion[i], stc)
                     # backoff[i] = random.randint(0, 2 ** max(nthclsion[i], sum(signal) - 1) - 1)
                     backoff[i] = random.randint(1, 2 ** min(nthclsion[i], 10))
             continue
@@ -64,11 +66,12 @@ def main(slot=1.0):
             if signal[i]:
                 nthclsion[i] = 0
                 station = stations[i]
+                busy += station.head().size
                 tmp = int(max(numpy.ceil(station.head().size / time_slot), 1))
                 station.death()
                 tmp = int(max(tmp, numpy.ceil(station.time() / time_slot - time)))
                 time += tmp
-                busy += tmp
+                use += tmp
                 update(stations, time * time_slot)
                 for j in iterator:
                     backoff[j] -= min(tmp, backoff[j])
@@ -82,15 +85,16 @@ def main(slot=1.0):
     # WTFin = [Analyzer.parse(i) for i in WTlog]
     # plt = Plot(QLFin, WTFin)
     CP = collision / (collision + TOTAL * snum) * 100
-    OR = (time - idle) / time * 100
-    TP = busy / time * 100
+    EF = busy / time_slot / time * 100
+    TP = use / time * 100
     # MQL = sum([sum(i) for i in QLlog]) / TOTAL / snum
     MWT = sum([sum(i) for i in WTlog]) / TOTAL / snum
     # print('Collision Probability: %.3f%%' % CP)
     # print('Occupancy rate of channel: %.3f%%' % OR)
+    # print('Throughput: %.3f%%' % TP)
     # print('Done!')
     # plt.show()
-    return (time_slot, CP, OR, TP, MWT)
+    return (time_slot, CP, EF, TP, MWT)
 
 
 def init(stations, QLlog, WTlog, log=None):
@@ -116,4 +120,4 @@ if __name__ == '__main__':
     # print(fin)
     plt = APlot(fin)
     plt.show()
-    # main(0.875)
+    # main(0.625)
